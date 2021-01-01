@@ -299,7 +299,7 @@ search() {
 		case $line in
 		    *$lower_str*)
 			case $token in
-			    l)
+			    l) # live search: only search until bound
 				case $((s - bound)) in
 				    -*|0) posnum="$posnum $i" ;;
 				    *) break ;;
@@ -345,7 +345,7 @@ search() {
 		case $line in
 		    *$str*)
 			case $token in
-			    l)
+			    l) # live search: only search until bound
 				case $((s - bound)) in
 				    -*|0) filter="$filter$IFS$line" ;;
 				    *) break ;;
@@ -389,7 +389,8 @@ key() {
     while key=$(dd ibs=1 count=1 2>/dev/null); do
 
 	case $key${esc:=0} in
-	    "$ctrl_u"?|~5)
+
+	    "$ctrl_u"?|~5) # Ctrl-u / PageUp
 		move=$(( width / 4 > 2 ? width / 4 : 2 ))
 
 		# Terminal condition
@@ -409,7 +410,7 @@ key() {
 		esac
 	    ;;
 
-	    "$ctrl_f"?|~6)
+	    "$ctrl_f"?|~6) # Ctrl-f / PageDown
 		move=$(( width / 4 > 2 ? width / 4 : 2 ))
 
 		# Terminal condition
@@ -429,7 +430,7 @@ key() {
 		esac
 	    ;;
 
-	    k?|A2|"$ctrl_p"?)
+	    k?|A2|"$ctrl_p"?) # k / Arrow Up / Ctrl-p
 		move=1
 
 		# Terminal condition
@@ -444,7 +445,7 @@ key() {
 		esac
 	    ;;
 
-	    j?|B2|"$ctrl_n"?)
+	    j?|B2|"$ctrl_n"?) # j / Arrow Down / Ctrl-n
 		move=1
 
 		# Terminal condition
@@ -459,11 +460,14 @@ key() {
 		esac
 	    ;;
 
-	    g?|H2|"$ctrl_a"?)
+	    g?|H2|"$ctrl_a"?) # g / Home / Ctrl-a
+
+		# Terminal condition
 		case $y in
 		    1) continue ;;
 		esac
 
+		# Normal mode v.s. Search mode
 		case $token in
 		    '/')
 			IFS=${ifs:=$nl}
@@ -483,11 +487,14 @@ key() {
 		return 0
 	    ;;
 
-	    G?|F2|"$ctrl_e"?)
+	    G?|F2|"$ctrl_e"?) # G / End / Ctrl-e
+
+		# Terminal condition
 		case $y in
 		    "$last") continue ;;
 		esac
 
+		# Normal mode v.s. Search mode
 		case $token in
 		    '/')
 			IFS=${ifs:=$nl}
@@ -509,7 +516,7 @@ key() {
 		return 0
 	    ;;
 
-	    l?|C2|"$esc") # ARROW RIGHT
+	    l?|C2|"$esc") # l / Arrow Right / Esc
 		case $token in
 		    '?') continue ;;
 		    *)
@@ -519,7 +526,7 @@ key() {
 		esac
 	    ;;
 
-	    h?|D2|"$bs_char"?) # ARROW LEFT
+	    h?|D2|"$bs_char"?) # h / Arrow Left / Backspace
 
 		case $token in
 		    '?'|'/')
@@ -536,7 +543,7 @@ key() {
 		esac
 	    ;;
 
-	    /?)
+	    /?) # /
 		count=0 bound=$width
 
 		old_save
@@ -568,13 +575,18 @@ key() {
 				    esac
 				    ;;
 				"$bs_char"?) # Backspace
-				    [ -n "$ans" ] && ans=${ans%%?}
-				    count=0
-				    unset complist
+				    case $ans in
+				        '') continue ;; # Inactive when no ans
+					*)
+					    ans=${ans%%?}
+					    count=0
+					    unset complist
+					    ;;
+				    esac
 				    ;;
 				"$tab"?) # Tab
 				    case $count in
-				        0) # First run, record $#
+				        0) # First run, record complist & $#
 					    complist=$filt_out
 					    IFS=${ifs:=$nl}
 					    # shellcheck disable=2086
@@ -601,7 +613,7 @@ key() {
 				    ;;
 				Z2) # Shift-Tab
 				    case $count in
-				        0)
+				        0) # First run, record complist
 					    complist=$filt_out
 					    IFS=${ifs:=$nl}
 					    # shellcheck disable=2086
@@ -611,7 +623,7 @@ key() {
 					    tab_complete "$@"
 					    esc=0
 					    ;;
-					*)
+					*) # Other run, compare count and 1
 					    case $(( count - 1 )) in
 					        -*|0) esc=0; continue ;;
 						*)
@@ -629,7 +641,7 @@ key() {
 				    ;;
 				"$esc_c"*) esc=1; continue ;;
 				'[1') esc=2; continue ;;
-				[[:cntrl:]]?) continue ;; # Do not accept control char
+				[[:cntrl:]]?) continue ;; # Do not accept other control char
 				*0) # Others
 				    ans="$ans$press"
 				    count=0
@@ -640,6 +652,9 @@ key() {
 		    esac
 
 		    search "$content" "$ifs" "$ans"
+
+		    [ "$filt_out" = "$last_filt_out" ] && continue # redraw if different than last time
+
 		    IFS=${ifs:=$nl}
 		    # shellcheck disable=2086
 		    set -- $filt_out
@@ -652,17 +667,17 @@ key() {
 		    esac
 
 		    case $token in
-		        l) last='??'; redraw "$@" ;;
+		        l) last='??'; last_filt_out=$filt_out; redraw "$@" ;;
 			/) last=$#; len=$(( $# > 500 ? 500 : $# )); redraw "$@"; break ;;
 		    esac
 		done
 
-		unset count complist bound
+		unset count complist bound last_filt_out
 
 		return 0
 	    ;;
 
-	    \??)
+	    \??) # ?
 		set -- 'k/↑/Ctrl-p - up' \
 		       'j/↓/Ctrl-n - down' \
 		       'l/→ - right' \
@@ -681,7 +696,7 @@ key() {
 		redraw "$@"
 	    ;;
 
-	    q?)
+	    q?) # q
 		term_reset
 		exit 0
 		;;
@@ -716,8 +731,7 @@ main() {
     while [ $? -eq 0 ]; do
 	case $token in
 	    '/')
-		# search "$content" "$ifs" "$ans"
-		IFS=$ifs
+		IFS=${ifs:=$nl}
 		# shellcheck disable=2086
 		set -- $filt_out
 		unset IFS

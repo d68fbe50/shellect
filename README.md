@@ -8,6 +8,7 @@ shellect is a selection system written in POSIX shell.
 <!-- vim-markdown-toc GFM -->
 
 * [Preview](#preview)
+* [Dependency](#dependency)
 * [Introduction](#introduction)
 * [Implementation Details](#implementation-details)
 	* [Explanation for TUI manipulation](#explanation-for-tui-manipulation)
@@ -18,6 +19,14 @@ shellect is a selection system written in POSIX shell.
 ## Preview
 
 [![shellect](https://asciinema.org/a/jLJay0bFv0mqSfcnWbAWYiVwu.png)](https://asciinema.org/a/jLJay0bFv0mqSfcnWbAWYiVwu)
+
+## Dependency
+
+1. POSIX-compliant shell: printf, set, unset, shift, test, while, continue, break, return, case, trap, getopts
+2. stty
+3. tr
+4. dd
+5. cat
 
 ## Introduction
 
@@ -206,7 +215,7 @@ key() {
 
 main() {
     ...
-    while [$? -eq 0]; do # If return 0, stay in while loop; others, leave the while loop
+    while [ $? -eq 0 ]; do # If return 0, stay in while loop; others, leave the while loop
 	set -- $content	# total content
 	key "$@"
     done
