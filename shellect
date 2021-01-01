@@ -1,4 +1,4 @@
-#!/usr/bin/env dash
+#!/usr/bin/env sh
 
 # Variable explain:
 # $y: the current argument in the whole content
@@ -661,7 +661,7 @@ key() {
 		    set -- $filt_out
 		    unset IFS
 
-		    y=1; yy=1; y2=$top; msg="Search by *$ans*; count=$count; cur=$cur";
+		    y=1; yy=1; y2=$top; msg="Search by *$ans*";
 
 		    case $# in
 		        0) num=1; set -- 'no result' ;;
