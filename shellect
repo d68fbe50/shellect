@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env dash
 
 # Variable explain:
 # $y: the current argument in the whole content
@@ -653,14 +653,15 @@ key() {
 
 		    search "$content" "$ifs" "$ans"
 
-		    [ "$filt_out" = "$last_filt_out" ] && continue # redraw if different than last time
+		    # redraw if different & not Enter
+		    [ "$filt_out" = "$last_filt_out" ] && [ -n "$press" ] && continue
 
 		    IFS=${ifs:=$nl}
 		    # shellcheck disable=2086
 		    set -- $filt_out
 		    unset IFS
 
-		    y=1; yy=1; y2=$top; msg="Search by *$ans*";
+		    y=1; yy=1; y2=$top; msg="Search by *$ans*; count=$count; cur=$cur";
 
 		    case $# in
 		        0) num=1; set -- 'no result' ;;
